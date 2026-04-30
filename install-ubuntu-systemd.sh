@@ -5,14 +5,24 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SERVICE_NAME="${SERVICE_NAME:-gateway}"
 INSTALL_DIR="${INSTALL_DIR:-$SCRIPT_DIR}"
 ENV_FILE="${ENV_FILE:-/etc/gateway.env}"
-RUN_USER="${RUN_USER:-${SUDO_USER:-$USER}}"
-RUN_GROUP="${RUN_GROUP:-$RUN_USER}"
-NODE_BIN="${NODE_BIN:-$(command -v node)}"
+RUN_USER="${RUN_USER:-root}"
+RUN_GROUP="${RUN_GROUP:-root}"
+NODE_BIN="${NODE_BIN:-}"
 SOURCE_SCRIPT="${SCRIPT_DIR}/reclaude-cliproxy-gateway.mjs"
 TARGET_SCRIPT="${INSTALL_DIR}/reclaude-cliproxy-gateway.mjs"
 
+if [[ -z "$NODE_BIN" ]]; then
+  NODE_BIN="$(command -v node || true)"
+fi
+
 if [[ -z "$NODE_BIN" || ! -x "$NODE_BIN" ]]; then
   echo "node was not found. Install Node.js 20+ first." >&2
+  exit 1
+fi
+
+NODE_MAJOR="$("$NODE_BIN" -p 'Number(process.versions.node.split(".")[0])')"
+if [[ "$NODE_MAJOR" -lt 20 ]]; then
+  echo "Node.js 20+ is required. Current: $("$NODE_BIN" -v)" >&2
   exit 1
 fi
 
@@ -20,6 +30,17 @@ if [[ ! -f "$SOURCE_SCRIPT" ]]; then
   echo "Run this script from the directory containing reclaude-cliproxy-gateway.mjs." >&2
   exit 1
 fi
+
+RUN_HOME="$(getent passwd "$RUN_USER" | cut -d: -f6 || true)"
+if [[ -z "$RUN_HOME" ]]; then
+  RUN_HOME="$HOME"
+fi
+
+echo "Deploying ${SERVICE_NAME}"
+echo "  user: ${RUN_USER}"
+echo "  install dir: ${INSTALL_DIR}"
+echo "  env file: ${ENV_FILE}"
+echo "  node: ${NODE_BIN} $("$NODE_BIN" -v)"
 
 sudo install -d -o "$RUN_USER" -g "$RUN_GROUP" "$INSTALL_DIR"
 
@@ -31,7 +52,13 @@ else
 fi
 
 if [[ ! -f "$ENV_FILE" ]]; then
-  sudo install -m 0640 -o root -g "$RUN_GROUP" "${SCRIPT_DIR}/reclaude-cliproxy-gateway.env.example" "$ENV_FILE"
+  tmp_env="$(mktemp)"
+  escaped_home="${RUN_HOME//\\/\\\\}"
+  escaped_home="${escaped_home//&/\\&}"
+  escaped_home="${escaped_home//#/\\#}"
+  sed "s#/home/ubuntu#${escaped_home}#g" "${SCRIPT_DIR}/reclaude-cliproxy-gateway.env.example" >"$tmp_env"
+  sudo install -m 0640 -o root -g "$RUN_GROUP" "$tmp_env" "$ENV_FILE"
+  rm -f "$tmp_env"
   echo "Created $ENV_FILE. Edit it before starting the service if your user or ports differ."
 fi
 
