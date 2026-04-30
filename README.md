@@ -9,25 +9,34 @@ Small Node.js gateway for routing API-compatible requests through a local upstre
 - Required upstream credentials and state files must already exist for the same Linux user that will run this service.
 - A local upstream service must already be installed, authenticated, and running on the same server.
 
-## Install On Ubuntu
+## Install Or Update On Ubuntu
 
-Copy this directory to the server, then run:
+First-time checkout:
 
 ```bash
-chmod +x install-ubuntu-systemd.sh
-RUN_USER=ubuntu SERVICE_NAME=gateway INSTALL_DIR=/opt/gateway ENV_FILE=/etc/gateway.env ./install-ubuntu-systemd.sh
+sudo git clone git@github.com:wanbiao1993usa/gateway.git /opt/gateway
+sudo chown -R ubuntu:ubuntu /opt/gateway
 ```
 
-Edit the generated environment file so the user paths and local upstream port match your server:
+Deploy or update:
+
+```bash
+cd /opt/gateway
+git pull --ff-only
+bash deploy.sh
+```
+
+The deploy script installs or updates the systemd service, enables it on boot, and restarts it.
+
+Edit the generated environment file if the user paths or local upstream port differ:
 
 ```bash
 sudo editor /etc/gateway.env
 ```
 
-Start or restart:
+Check service status:
 
 ```bash
-sudo systemctl restart gateway
 sudo systemctl status gateway --no-pager
 ```
 
