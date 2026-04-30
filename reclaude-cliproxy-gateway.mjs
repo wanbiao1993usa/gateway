@@ -50,7 +50,7 @@ function usage() {
     "  RECLAUDE_GATEWAY_LISTEN=127.0.0.1:58400",
     "  RECLAUDE_GATEWAY_AUTH=auto|inject|pass",
     "  RECLAUDE_GATEWAY_TOKEN=<token>",
-    "  RECLAUDE_DAEMON_ADDR=127.0.0.1:58391",
+    "  RECLAUDE_DAEMON_ADDR=<host:port>  # optional; overrides state file",
     "  RECLAUDE_STATE_PATH=~/.reclaude/state.json",
     "  RECLAUDE_CA_PATH=~/.reclaude/ca.pem",
     "  RECLAUDE_CLAUDE_CREDENTIALS_PATH=~/.claude/.credentials.json",

@@ -60,6 +60,13 @@ if [[ ! -f "$ENV_FILE" ]]; then
   sudo install -m 0640 -o root -g "$RUN_GROUP" "$tmp_env" "$ENV_FILE"
   rm -f "$tmp_env"
   echo "Created $ENV_FILE. Edit it before starting the service if your user or ports differ."
+else
+  if sudo grep -Eq '^RECLAUDE_DAEMON_ADDR=127\.0\.0\.1:58391$' "$ENV_FILE"; then
+    sudo sed -i.bak 's/^RECLAUDE_DAEMON_ADDR=127\.0\.0\.1:58391$/# RECLAUDE_DAEMON_ADDR=127.0.0.1:58391/' "$ENV_FILE"
+    echo "Updated $ENV_FILE to read the daemon port from state.json dynamically."
+  elif sudo grep -Eq '^[[:space:]]*RECLAUDE_DAEMON_ADDR=' "$ENV_FILE"; then
+    echo "Warning: $ENV_FILE pins RECLAUDE_DAEMON_ADDR. Remove or comment it to read the daemon port from state.json dynamically."
+  fi
 fi
 
 sudo tee "/etc/systemd/system/${SERVICE_NAME}.service" >/dev/null <<SERVICE
