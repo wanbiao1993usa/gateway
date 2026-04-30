@@ -1,0 +1,17 @@
+{
+  "name": "reclaude-cliproxy-gateway",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "reclaude-cliproxy-gateway": "./reclaude-cliproxy-gateway.mjs"
+  },
+  "scripts": {
+    "start": "node reclaude-cliproxy-gateway.mjs",
+    "check": "node --check reclaude-cliproxy-gateway.mjs",
+    "check:install": "bash -n install-ubuntu-systemd.sh"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
