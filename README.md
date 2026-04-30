@@ -14,14 +14,14 @@ Small Node.js gateway for routing API-compatible requests through a local upstre
 First-time checkout:
 
 ```bash
-sudo git clone git@github.com:wanbiao1993usa/gateway.git /opt/gateway
-sudo chown -R ubuntu:ubuntu /opt/gateway
+cd ~
+git clone git@github.com:wanbiao1993usa/gateway.git gateway
 ```
 
 Deploy or update:
 
 ```bash
-cd /opt/gateway
+cd ~/gateway
 git pull --ff-only
 bash deploy.sh
 ```

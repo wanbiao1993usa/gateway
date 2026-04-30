@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SERVICE_NAME="${SERVICE_NAME:-gateway}"
-INSTALL_DIR="${INSTALL_DIR:-/opt/gateway}"
+INSTALL_DIR="${INSTALL_DIR:-$SCRIPT_DIR}"
 ENV_FILE="${ENV_FILE:-/etc/gateway.env}"
 RUN_USER="${RUN_USER:-${SUDO_USER:-$USER}}"
 RUN_GROUP="${RUN_GROUP:-$RUN_USER}"
