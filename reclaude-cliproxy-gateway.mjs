@@ -113,19 +113,19 @@ function loadToken() {
   const envToken = process.env.RECLAUDE_GATEWAY_TOKEN?.trim();
   if (envToken) return { token: envToken, source: "env:RECLAUDE_GATEWAY_TOKEN" };
 
-  if (fs.existsSync(defaultClaudeCredentialsPath)) {
-    const credentials = readJSON(defaultClaudeCredentialsPath);
-    const token = credentials.claudeAiOauth?.accessToken;
-    if (typeof token === "string" && token.trim()) {
-      return { token: token.trim(), source: defaultClaudeCredentialsPath };
-    }
-  }
-
   if (fs.existsSync(defaultReclaudeDevicePath)) {
     const device = readJSON(defaultReclaudeDevicePath);
     const token = device.sk;
     if (typeof token === "string" && token.trim()) {
       return { token: token.trim(), source: defaultReclaudeDevicePath };
+    }
+  }
+
+  if (fs.existsSync(defaultClaudeCredentialsPath)) {
+    const credentials = readJSON(defaultClaudeCredentialsPath);
+    const token = credentials.claudeAiOauth?.accessToken;
+    if (typeof token === "string" && token.trim()) {
+      return { token: token.trim(), source: defaultClaudeCredentialsPath };
     }
   }
 
