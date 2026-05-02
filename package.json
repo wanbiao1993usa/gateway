@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "bin": {
+    "gateway": "./reclaude-cliproxy-gateway.mjs",
     "reclaude-cliproxy-gateway": "./reclaude-cliproxy-gateway.mjs"
   },
   "scripts": {

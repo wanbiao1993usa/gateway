@@ -58,6 +58,13 @@ View logs:
 journalctl -u gateway -f
 ```
 
+Run the command directly after deployment:
+
+```bash
+gateway --help
+gateway --version
+```
+
 ## Client Configuration
 
 Point your client or proxy base URL at this gateway:

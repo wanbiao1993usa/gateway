@@ -7,6 +7,8 @@ INSTALL_DIR="${INSTALL_DIR:-$SCRIPT_DIR}"
 ENV_FILE="${ENV_FILE:-/etc/gateway.env}"
 RUN_USER="${RUN_USER:-root}"
 RUN_GROUP="${RUN_GROUP:-root}"
+COMMAND_NAME="${COMMAND_NAME:-gateway}"
+COMMAND_PATH="${COMMAND_PATH:-/usr/local/bin/${COMMAND_NAME}}"
 NODE_BIN="${NODE_BIN:-}"
 SOURCE_SCRIPT="${SCRIPT_DIR}/reclaude-cliproxy-gateway.mjs"
 TARGET_SCRIPT="${INSTALL_DIR}/reclaude-cliproxy-gateway.mjs"
@@ -41,6 +43,7 @@ echo "  user: ${RUN_USER}"
 echo "  install dir: ${INSTALL_DIR}"
 echo "  env file: ${ENV_FILE}"
 echo "  node: ${NODE_BIN} $("$NODE_BIN" -v)"
+echo "  command: ${COMMAND_PATH}"
 
 sudo install -d -o "$RUN_USER" -g "$RUN_GROUP" "$INSTALL_DIR"
 
@@ -49,6 +52,14 @@ if [[ "$(readlink -f "$SOURCE_SCRIPT")" != "$(readlink -f "$TARGET_SCRIPT" 2>/de
 else
   sudo chown "$RUN_USER:$RUN_GROUP" "$TARGET_SCRIPT"
   sudo chmod 0755 "$TARGET_SCRIPT"
+fi
+
+COMMAND_DIR="$(dirname "$COMMAND_PATH")"
+sudo install -d -o root -g root "$COMMAND_DIR"
+if [[ -e "$COMMAND_PATH" && ! -L "$COMMAND_PATH" ]]; then
+  echo "Warning: $COMMAND_PATH already exists and is not a symlink; command was not installed."
+else
+  sudo ln -sfn "$TARGET_SCRIPT" "$COMMAND_PATH"
 fi
 
 if [[ ! -f "$ENV_FILE" ]]; then
@@ -102,5 +113,6 @@ sudo systemctl restart "${SERVICE_NAME}.service"
 
 echo "Installed ${SERVICE_NAME}.service"
 echo "Environment: ${ENV_FILE}"
+echo "Command: ${COMMAND_PATH} --help"
 echo "Status: sudo systemctl status ${SERVICE_NAME} --no-pager"
 echo "Health: curl http://127.0.0.1:58400/__health"

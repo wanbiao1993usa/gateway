@@ -29,6 +29,7 @@ function parseArgs(args) {
   for (let i = 0; i < args.length; i += 1) {
     const arg = args[i];
     if (arg === "--help" || arg === "-h") out.help = true;
+    else if (arg === "--version") out.version = true;
     else if (arg === "--listen") out.listen = args[++i];
     else if (arg === "--state") out.state = args[++i];
     else if (arg === "--ca") out.ca = args[++i];
@@ -43,8 +44,9 @@ function parseArgs(args) {
 function usage() {
   return [
     "Usage:",
-    "  node reclaude-cliproxy-gateway.mjs [--listen 127.0.0.1:58400]",
-    "  node reclaude-cliproxy-gateway.mjs --check /api/oauth/profile",
+    "  gateway [--listen 127.0.0.1:58400]",
+    "  gateway --check /path",
+    "  gateway --version",
     "",
     "Environment:",
     "  RECLAUDE_GATEWAY_LISTEN=127.0.0.1:58400",
@@ -58,6 +60,15 @@ function usage() {
     "  RECLAUDE_CLAUDE_STATE_PATH=~/.claude.json",
     "  RECLAUDE_ACCESS_LOG=true|false",
   ].join("\n");
+}
+
+function packageVersion() {
+  try {
+    const packageJSON = readJSON(new URL("./package.json", import.meta.url));
+    return typeof packageJSON.version === "string" ? packageJSON.version : "unknown";
+  } catch {
+    return "unknown";
+  }
 }
 
 function parseListen(value) {
@@ -916,6 +927,8 @@ function installShutdownHandlers(server) {
 
 if (options.help) {
   console.log(usage());
+} else if (options.version) {
+  console.log(packageVersion());
 } else if (options.check) {
   await check(options.check);
 } else {
@@ -923,7 +936,7 @@ if (options.help) {
   installShutdownHandlers(server);
   server.listen(listen.port, listen.host, () => {
     const tokenInfo = loadToken();
-    console.log(`reclaude cliproxy gateway listening on http://${listen.host}:${listen.port}`);
+    console.log(`gateway listening on http://${listen.host}:${listen.port}`);
     console.log(`target: https://${targetHost}`);
     console.log(`daemon: ${resolveDaemonAddress()}`);
     console.log(`auth: ${tokenInfo.token ? `inject:${tokenInfo.source}` : tokenInfo.source}`);
