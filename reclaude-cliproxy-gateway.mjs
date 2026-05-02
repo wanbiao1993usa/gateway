@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import crypto from "node:crypto";
+import { spawnSync } from "node:child_process";
 import https from "node:https";
 import http from "node:http";
 import net from "node:net";
@@ -23,7 +24,9 @@ const statePath = options.state ?? process.env.RECLAUDE_STATE_PATH ?? defaultSta
 const caPath = options.ca ?? process.env.RECLAUDE_CA_PATH ?? defaultCAPath;
 const authMode = options.auth ?? process.env.RECLAUDE_GATEWAY_AUTH ?? "auto";
 const accessLogEnabled = parseBoolean(process.env.RECLAUDE_ACCESS_LOG ?? "true");
-const accountDeviceId = process.env.RECLAUDE_ACCOUNT_DEVICE_ID?.trim() ?? "";
+const explicitAccountDeviceId = process.env.RECLAUDE_ACCOUNT_DEVICE_ID?.trim() ?? "";
+const reclaudeBin = process.env.RECLAUDE_BIN?.trim() || defaultReclaudeBin();
+let accountDeviceIdCache;
 
 function parseArgs(args) {
   const out = {};
@@ -59,7 +62,8 @@ function usage() {
     "  RECLAUDE_CLAUDE_CREDENTIALS_PATH=~/.claude/.credentials.json",
     "  RECLAUDE_DEVICE_PATH=~/.reclaude/device.json",
     "  RECLAUDE_CLAUDE_STATE_PATH=~/.claude.json",
-    "  RECLAUDE_ACCOUNT_DEVICE_ID=<id>",
+    "  RECLAUDE_ACCOUNT_DEVICE_ID=<id>  # optional; overrides auto-detect",
+    "  RECLAUDE_BIN=reclaude",
     "  RECLAUDE_ACCESS_LOG=true|false",
   ].join("\n");
 }
@@ -92,6 +96,12 @@ function parseAccountDeviceId(value) {
   const text = String(value ?? "").trim();
   if (/^\d+$/.test(text)) return Number(text);
   return text;
+}
+
+function defaultReclaudeBin() {
+  const localBin = path.join(home, ".local", "bin", "reclaude");
+  if (fs.existsSync(localBin)) return localBin;
+  return "reclaude";
 }
 
 function readJSON(filePath) {
@@ -158,8 +168,28 @@ function loadClaudeIdentity() {
     deviceId: typeof claudeState.userID === "string" ? claudeState.userID : "",
     accountUuid:
       typeof claudeState.oauthAccount?.accountUuid === "string" ? claudeState.oauthAccount.accountUuid : "",
-    accountDeviceId,
+    accountDeviceId: loadAccountDeviceId(),
   };
+}
+
+function loadAccountDeviceId() {
+  if (explicitAccountDeviceId) return explicitAccountDeviceId;
+  if (accountDeviceIdCache !== undefined) return accountDeviceIdCache;
+  accountDeviceIdCache = discoverAccountDeviceId();
+  return accountDeviceIdCache;
+}
+
+function discoverAccountDeviceId() {
+  const result = spawnSync(reclaudeBin, ["org", "list"], {
+    encoding: "utf8",
+    env: { ...process.env, NO_COLOR: "1" },
+    timeout: 5000,
+    windowsHide: true,
+  });
+  const output = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
+  const activeLine = output.split(/\r?\n/).find((line) => /^\s*\*\s+\d+\b/.test(line));
+  const match = activeLine?.match(/^\s*\*\s+(\d+)\b/);
+  return match?.[1] ?? "";
 }
 
 function usageTargets() {
