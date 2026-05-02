@@ -23,6 +23,7 @@ const statePath = options.state ?? process.env.RECLAUDE_STATE_PATH ?? defaultSta
 const caPath = options.ca ?? process.env.RECLAUDE_CA_PATH ?? defaultCAPath;
 const authMode = options.auth ?? process.env.RECLAUDE_GATEWAY_AUTH ?? "auto";
 const accessLogEnabled = parseBoolean(process.env.RECLAUDE_ACCESS_LOG ?? "true");
+const accountDeviceId = process.env.RECLAUDE_ACCOUNT_DEVICE_ID?.trim() ?? "";
 
 function parseArgs(args) {
   const out = {};
@@ -58,6 +59,7 @@ function usage() {
     "  RECLAUDE_CLAUDE_CREDENTIALS_PATH=~/.claude/.credentials.json",
     "  RECLAUDE_DEVICE_PATH=~/.reclaude/device.json",
     "  RECLAUDE_CLAUDE_STATE_PATH=~/.claude.json",
+    "  RECLAUDE_ACCOUNT_DEVICE_ID=<id>",
     "  RECLAUDE_ACCESS_LOG=true|false",
   ].join("\n");
 }
@@ -84,6 +86,12 @@ function parseListen(value) {
 
 function parseBoolean(value) {
   return /^(1|true|yes|on)$/i.test(String(value).trim());
+}
+
+function parseAccountDeviceId(value) {
+  const text = String(value ?? "").trim();
+  if (/^\d+$/.test(text)) return Number(text);
+  return text;
 }
 
 function readJSON(filePath) {
@@ -150,6 +158,7 @@ function loadClaudeIdentity() {
     deviceId: typeof claudeState.userID === "string" ? claudeState.userID : "",
     accountUuid:
       typeof claudeState.oauthAccount?.accountUuid === "string" ? claudeState.oauthAccount.accountUuid : "",
+    accountDeviceId,
   };
 }
 
@@ -370,6 +379,9 @@ function normalizeClaudeCodeMetadata(req, body) {
     ...parsedUserID,
     device_id: identity.deviceId || parsedUserID.device_id || legacyUserID.device_id || "",
     account_uuid: identity.accountUuid || parsedUserID.account_uuid || legacyUserID.account_uuid || "",
+    ...(identity.accountDeviceId || parsedUserID.account_device_id
+      ? { account_device_id: parseAccountDeviceId(identity.accountDeviceId || parsedUserID.account_device_id) }
+      : {}),
     session_id: sessionId,
   };
 
